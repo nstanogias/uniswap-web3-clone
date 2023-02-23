@@ -24,10 +24,6 @@ contract Volswap {
         return volToken.totalSupply();
     }
 
-    function getName() public view returns (string memory) {
-        return volToken.name();
-    }
-
     function getTokenAddress() public view returns (address) {
         return address(volToken);
     }
@@ -37,20 +33,34 @@ contract Volswap {
     }
 
     function swapEthToToken() public payable returns (uint256) {
+        require(msg.value > 0, "You need to send some ETH to proceed");
+
         uint256 inputValue = msg.value;
-        uint256 outputValue = (inputValue / ethValue) * 10 ** 18; // Convert to 18 decimal places
-        require(volToken.transfer(msg.sender, outputValue));
-        return outputValue;
+        uint256 amountToBuy = (inputValue / ethValue) * 10 ** 18; // Convert to 18 decimal places
+        uint256 vendorTokenBalance = volToken.balanceOf(address(this));
+        require(vendorTokenBalance >= amountToBuy, "Volswap contract doesn't have enough token balance");
+        (bool sent) = volToken.transfer(msg.sender, amountToBuy);
+
+        require(sent, "Failed to transfer tokes to user");
+
+        return amountToBuy;
     }
 
     function swapTokenToEth(uint256 _amount) public returns (uint256) {
+        require(_amount > 0, "Specify an amount greater than 0");
+        
+        uint256 userBalance = volToken.balanceOf(msg.sender);
+        require(userBalance >= _amount, "You have insufficient funds");
         // Convert the token amount (ethValue) to exact amount (10)
         uint256 exactAmount = _amount / 10 ** 18;
         uint256 ethToBeTransferred = exactAmount * ethValue;
-        require(address(this).balance >= ethToBeTransferred, "Dex is running low on balance.");
+        uint256 vendorETHBalance = address(this).balance;
+        require(vendorETHBalance >= ethToBeTransferred, "Volswap contract doesn't have enough eth balance");
+        (bool sent) = volToken.transferFrom(msg.sender, address(this), _amount);
+        require(sent, "Failed to transfer tokes to user");
 
         payable(msg.sender).transfer(ethToBeTransferred);
-        require(volToken.transferFrom(msg.sender, address(this), _amount));
+        
         return ethToBeTransferred;
     }
 }
