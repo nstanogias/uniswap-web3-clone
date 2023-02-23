@@ -3,7 +3,7 @@ import { ConnectWallet } from '@thirdweb-dev/react';
 import Loader from './Loader';
 
 const Header = () => {
-  const { address, balance, isLoading } = useApiContext();
+  const { address, volfiBalance, ethBalance, isLoading } = useApiContext();
 
   return (
     <div className='fixed top-0 left-0 flex items-center justify-between w-full px-8 py-4'>
@@ -11,7 +11,12 @@ const Header = () => {
       <div className='flex items-center'>
         <img src='./logo.png' className='h-12' />
       </div>
-      {address && <div className='flex items-center text-white'>VOLFI balance: {balance}</div>}
+      {address && volfiBalance && (
+        <div className='flex flex-col items-center text-white'>
+          <p>VOLFI balance: {volfiBalance}</p>
+          <p>ETH balance: {ethBalance}</p>
+        </div>
+      )}
       <div className='flex'>
         <ConnectWallet />
       </div>
