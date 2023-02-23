@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { ArrowSmDownIcon } from '@heroicons/react/outline';
 import toast, { Toaster } from 'react-hot-toast';
@@ -10,16 +10,16 @@ const ENTER_AMOUNT = 'Enter an amount';
 const CONNECT_WALLET = 'Connect wallet';
 const SWAP = 'Swap';
 const ETH = 'ETH';
+const VOLFI = 'VOLFI';
 
 const SwapComponent = () => {
-  const { address, swapEthToToken, isLoading } = useApiContext();
+  const { address, swapEthToToken, swapTokenToEth, isLoading } = useApiContext();
   const [srcToken, setSrcToken] = useState<string>(ETH);
-  const [destToken, setDestToken] = useState<string>('VolTok');
+  const [destToken, setDestToken] = useState<string>(VOLFI);
 
   const [inputValue, setInputValue] = useState<string>();
   const [outputValue, setOutputValue] = useState<string>();
 
-  const isReversed = useRef<boolean>(false);
   const [swapBtnText, setSwapBtnText] = useState(ENTER_AMOUNT);
 
   const notifySuccess = (hash: string) =>
@@ -56,13 +56,6 @@ const SwapComponent = () => {
     if (inputValue?.length === 0) setOutputValue('');
   }, [inputValue]);
 
-  useEffect(() => {
-    populateInputValue();
-    if (outputValue?.length === 0) setInputValue('');
-    // Reset the isReversed value if its set
-    if (isReversed.current) isReversed.current = false;
-  }, [outputValue]);
-
   const getSwapBtnClassName = () => {
     let className = 'w-full p-4 my-2 rounded-xl';
     className +=
@@ -73,15 +66,9 @@ const SwapComponent = () => {
   };
 
   const handleReverseExchange = (e: any) => {
-    // Setting the isReversed value to prevent the input/output values
-    // being calculated in their respective side - effects
-    isReversed.current = true;
-
-    // 1. Swap tokens (srcToken <-> destToken)
-    // 2. Swap values (inputValue <-> outputValue)
-
-    setInputValue(outputValue);
-    setOutputValue(inputValue);
+    // Reset fields
+    setInputValue('');
+    setOutputValue('');
 
     setSrcToken(destToken);
     setDestToken(srcToken);
@@ -91,12 +78,11 @@ const SwapComponent = () => {
     if (!inputValue) return;
 
     try {
-      if (srcToken !== ETH && destToken !== ETH) setOutputValue(inputValue);
-      else if (srcToken === ETH && destToken !== ETH) {
-        const outValue = toEth(toWei(inputValue), 14);
+      if (srcToken === ETH && destToken !== ETH) {
+        const outValue = toEth(toWei(inputValue), 15);
         setOutputValue(outValue);
       } else if (srcToken !== ETH && destToken === ETH) {
-        const outValue = toEth(toWei(inputValue, 14));
+        const outValue = toEth(toWei(inputValue, 15));
         setOutputValue(outValue);
       }
     } catch (error) {
@@ -104,28 +90,9 @@ const SwapComponent = () => {
     }
   };
 
-  const populateInputValue = () => {
-    if (!outputValue) return;
-
-    try {
-      if (srcToken !== ETH && destToken !== ETH) setInputValue(outputValue);
-      else if (srcToken === ETH && destToken !== ETH) {
-        const outValue = toEth(toWei(outputValue, 14));
-        setInputValue(outValue);
-      } else if (srcToken !== ETH && destToken === ETH) {
-        const outValue = toEth(toWei(outputValue), 14);
-        setInputValue(outValue);
-      }
-    } catch (error) {
-      setInputValue('0');
-    }
-  };
-
   const handleSwap = async () => {
-    if (srcToken === ETH) {
-      const { receipt } = await swapEthToToken(+inputValue!);
-      if (receipt && receipt.hasOwnProperty('transactionHash')) notifySuccess(receipt.transactionHash);
-    }
+    const { receipt } = srcToken === ETH ? await swapEthToToken(+inputValue!) : await swapTokenToEth(+inputValue!);
+    if (receipt && receipt.hasOwnProperty('transactionHash')) notifySuccess(receipt.transactionHash);
   };
 
   return (
@@ -157,9 +124,6 @@ const SwapComponent = () => {
             className='w-full h-8 px-2 text-3xl bg-transparent outline-none appearance-none'
             value={outputValue}
             placeholder={'0.0'}
-            onChange={(e) => {
-              setOutputValue(e.target.value);
-            }}
           />
           <p>{destToken}</p>
         </div>
