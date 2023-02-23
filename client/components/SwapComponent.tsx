@@ -4,6 +4,7 @@ import { ArrowSmDownIcon } from '@heroicons/react/outline';
 import toast, { Toaster } from 'react-hot-toast';
 import { toEth, toWei } from '../utils/ether-utils';
 import { useApiContext } from '../context';
+import Loader from './Loader';
 
 const ENTER_AMOUNT = 'Enter an amount';
 const CONNECT_WALLET = 'Connect wallet';
@@ -11,7 +12,7 @@ const SWAP = 'Swap';
 const ETH = 'ETH';
 
 const SwapComponent = () => {
-  const { address } = useApiContext();
+  const { address, swapEthToToken, isLoading } = useApiContext();
   const [srcToken, setSrcToken] = useState<string>(ETH);
   const [destToken, setDestToken] = useState<string>('VolTok');
 
@@ -21,11 +22,30 @@ const SwapComponent = () => {
   const isReversed = useRef<boolean>(false);
   const [swapBtnText, setSwapBtnText] = useState(ENTER_AMOUNT);
 
-  const notifyError = (msg: string) => toast.error(msg, { duration: 6000 });
-  const notifySuccess = () => toast.success('Transaction completed.');
+  const notifySuccess = (hash: string) =>
+    toast.success(
+      <div className='flex flex-col'>
+        <p>Transaction completed successfully</p>
+        <p className='mt-2'>
+          You can view it on{' '}
+          <a
+            className='underline'
+            href={`https://goerli.etherscan.io/tx/${hash}`}
+            target='_blank'
+            rel='noopener noreferrer'
+          >
+            etherscan
+          </a>
+        </p>
+        <button className='mt-[10px] p-2 border rounded-md' onClick={() => toast.dismiss()}>
+          Dismiss
+        </button>
+      </div>,
+      { duration: 20000 }
+    );
 
+  // Handle the text of the submit button
   useEffect(() => {
-    // Handle the text of the submit button
     if (!address) setSwapBtnText(CONNECT_WALLET);
     else if (!inputValue || !outputValue) setSwapBtnText(ENTER_AMOUNT);
     else setSwapBtnText(SWAP);
@@ -101,21 +121,28 @@ const SwapComponent = () => {
     }
   };
 
+  const handleSwap = async () => {
+    if (srcToken === ETH) {
+      const { receipt } = await swapEthToToken(+inputValue!);
+      if (receipt && receipt.hasOwnProperty('transactionHash')) notifySuccess(receipt.transactionHash);
+    }
+  };
+
   return (
     <div className='bg-zinc-900 w-[35%] p-4 px-6 rounded-xl'>
-      <div className='relative bg-[#212429] p-4 py-6 rounded-xl mb-2 border-[2px] border-transparent hover:border-zinc-600'>
+      {isLoading && <Loader />}
+      <div className='relative bg-[#212429] p-4 py-6 rounded-xl mb-2 border-[2px] border-transparent hover:border-zinc-600 text-white'>
         <div className='flex items-center rounded-xl'>
           <input
             type={'text'}
-            className='w-full h-8 px-2 text-3xl text-white bg-transparent outline-none appearance-none'
+            className='w-full h-8 px-2 text-3xl bg-transparent outline-none appearance-none'
             value={inputValue}
             placeholder={'0.0'}
             onChange={(e) => {
               setInputValue(e.target.value);
             }}
           />
-
-          <p className='text-white'>{srcToken}</p>
+          <p>{srcToken}</p>
         </div>
 
         <ArrowSmDownIcon
@@ -124,25 +151,24 @@ const SwapComponent = () => {
         />
       </div>
 
-      <div className='bg-[#212429] p-4 py-6 rounded-xl mt-2 border-[2px] border-transparent hover:border-zinc-600'>
+      <div className='bg-[#212429] p-4 py-6 rounded-xl mt-2 border-[2px] border-transparent hover:border-zinc-600 text-white '>
         <div className='flex items-center rounded-xl'>
           <input
-            className='w-full h-8 px-2 text-3xl text-white bg-transparent outline-none appearance-none'
+            className='w-full h-8 px-2 text-3xl bg-transparent outline-none appearance-none'
             value={outputValue}
             placeholder={'0.0'}
             onChange={(e) => {
               setOutputValue(e.target.value);
             }}
           />
-
-          <p className='text-white'>{destToken}</p>
+          <p>{destToken}</p>
         </div>
       </div>
 
       <button
         className={getSwapBtnClassName()}
         onClick={() => {
-          // if (swapBtnText === SWAP) handleSwap();
+          if (swapBtnText === SWAP) handleSwap();
         }}
       >
         {swapBtnText}
