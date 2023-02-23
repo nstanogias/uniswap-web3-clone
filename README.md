@@ -37,17 +37,17 @@ This is the logic where ETH are exchanged to VOLFI tokens and then VOLFI is tran
 
 ```solidity
         function swapEthToToken() public payable returns (uint256 tokenAmount) {
-        require(msg.value > 0, "You need to send some ETH to proceed");
+            require(msg.value > 0, "You need to send some ETH to proceed");
 
-        uint256 amountToBuy = msg.value * voltokensPerEth;
-        uint256 vendorTokenBalance = volToken.balanceOf(address(this));
-        require(vendorTokenBalance >= amountToBuy, "Volswap contract doesn't have enough token balance");
-        (bool sent) = volToken.transfer(msg.sender, amountToBuy);
+            uint256 amountToBuy = msg.value * voltokensPerEth;
+            uint256 vendorTokenBalance = volToken.balanceOf(address(this));
+            require(vendorTokenBalance >= amountToBuy, "Volswap contract doesn't have enough token balance");
+            (bool sent) = volToken.transfer(msg.sender, amountToBuy);
 
-        require(sent, "Failed to transfer tokens to user");
+            require(sent, "Failed to transfer tokens to user");
 
-        return amountToBuy;
-    }
+            return amountToBuy;
+        }
 ```
 
 ### swapTokenToEth
@@ -56,16 +56,15 @@ This is the logic where VOLFI tokens are exchanged to ETH and then ETH is transf
 
 ```solidity
         function swapTokenToEth(uint256 tokenAmountToSell) public {
-        require(tokenAmountToSell > 0, "Specify an amount greater than 0");
-        uint256 userBalance = volToken.balanceOf(msg.sender);
-        require(userBalance >= tokenAmountToSell, "You have insufficient funds");
-        uint256 amountOfEthToTransfer = tokenAmountToSell / voltokensPerEth;
-        uint256 ownerEthBalance = address(this).balance;
-        require(ownerEthBalance >= amountOfEthToTransfer, "Volswap contract doesn't have enough eth balance");
-        (bool sent) = volToken.transferFrom(msg.sender, address(this), tokenAmountToSell);
-        require(sent, "Failed to transfer tokens");
-        (sent,) = msg.sender.call{value: amountOfEthToTransfer}("");
-        require(sent, "Failed to transfer ETH");
-    }
-    }
+            require(tokenAmountToSell > 0, "Specify an amount greater than 0");
+            uint256 userBalance = volToken.balanceOf(msg.sender);
+            require(userBalance >= tokenAmountToSell, "You have insufficient funds");
+            uint256 amountOfEthToTransfer = tokenAmountToSell / voltokensPerEth;
+            uint256 ownerEthBalance = address(this).balance;
+            require(ownerEthBalance >= amountOfEthToTransfer, "Volswap contract doesn't have enough eth balance");
+            (bool sent) = volToken.transferFrom(msg.sender, address(this), tokenAmountToSell);
+            require(sent, "Failed to transfer tokens");
+            (sent,) = msg.sender.call{value: amountOfEthToTransfer}("");
+            require(sent, "Failed to transfer ETH");
+        }
 ```
