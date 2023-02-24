@@ -8,6 +8,12 @@ We deploy the Smart contract using [thirdweb deploy](https://portal.thirdweb.com
 
 **Check out the Demo here**: https://volswap-nstanogias.vercel.app/
 
+![](client/public/app.png)
+
+Upon a sucessful swap, user sees a confirmation modal with a link on etherscan to check the transaction
+
+![](client/public/receipt.png)
+
 ## Tools
 
 - [**thirdweb Deploy**](https://portal.thirdweb.com/thirdweb-deploy): Deploy our `Volswap.sol` smart contract with zero configuration by running `npx thirdweb deploy`.
@@ -68,3 +74,9 @@ This is the logic where VOLFI tokens are exchanged to ETH and then ETH is transf
             require(sent, "Failed to transfer ETH");
         }
 ```
+
+## Liquidity Pool
+
+In order to add value to VOLFI token, a liquidity pool is created on Uniswap.
+
+![](client/public/lp.png)
